@@ -5,6 +5,11 @@ VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyFunctionApp", "MyFunctionApp\MyFunctionApp.csproj", "{9FCD5DA4-71E9-4FA5-9DCD-FDFBCA6E86D0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "web", "web", "{A3BFEE23-7CFB-4E15-A99A-E5A5A843752C}"
+	ProjectSection(SolutionItems) = preProject
+		web\index.html = web\index.html
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
