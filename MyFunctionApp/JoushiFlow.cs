@@ -1,35 +1,97 @@
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using System;
+using System.Net.Http;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace MyFunctionApp
 {
     public static class JoushiFlow
     {
+        private static HttpClient httpClient = new HttpClient();
+
         [FunctionName("JoushiFlow")]
-        public static async Task<List<string>> RunOrchestrator(
+        public static async Task<string> RunOrchestrator(
             [OrchestrationTrigger] DurableOrchestrationContext context)
         {
-            var outputs = new List<string>();
+            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Start JoushiFlow.");
 
-            // Replace "hello" with the name of your Durable Activity Function.
-            outputs.Add(await context.CallActivityAsync<string>("JoushiFlow_Hello", "Tokyo"));
-            outputs.Add(await context.CallActivityAsync<string>("JoushiFlow_Hello", "Seattle"));
-            outputs.Add(await context.CallActivityAsync<string>("JoushiFlow_Hello", "London"));
+            // Question1
+            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Question1 'Can you do action1?'");
+            var approved1 = await context.WaitForExternalEvent<bool>("JoushiFlow_Approval1");
+            if (!approved1)
+            {
+                // denied -> exit
+                return await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Denied Question1.");
+            }
 
-            // returns ["Hello Tokyo!", "Hello Seattle!", "Hello London!"]
-            return outputs;
+            // Question2
+            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Question2 'Can you do action2?'");
+            var approved2 = await context.WaitForExternalEvent<bool>("JoushiFlow_Approval2");
+            if (!approved2)
+            {
+                // denied -> exit
+                return await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Denied Question2.");
+            }
+
+            // Question3
+            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Question3 'Can you do action3?'");
+            var approved3 = await context.WaitForExternalEvent<bool>("JoushiFlow_Approval3");
+            if (!approved3)
+            {
+                // denied -> exit
+                return await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Denied Question3.");
+            }
+
+            return await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Completed all actions.");
         }
 
-        [FunctionName("JoushiFlow_Hello")]
-        public static string SayHello([ActivityTrigger] string name, ILogger log)
+        [FunctionName("JoushiFlow_PostToSlack")]
+        public static string PostToSlack([ActivityTrigger] string message, ILogger log)
         {
-            log.LogInformation($"Saying hello to {name}.");
-            return $"Hello {name}!";
+            log.LogInformation(message);
+            var webhookUrl = Environment.GetEnvironmentVariable("SlackWebhookUrl");
+            var payload = JsonConvert.SerializeObject(new SlackPayload { Text = message });
+            var requestContent = new StringContent(payload, Encoding.UTF8, "application/json");
+            var response = httpClient.PostAsync(webhookUrl, requestContent).GetAwaiter().GetResult();
+            return response.ToString();
+        }
+
+        [FunctionName("JoushiFlow_Request1")]
+        public static async Task RequestApproval1(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")]HttpRequestMessage req,
+            [OrchestrationClient]DurableOrchestrationClient client,
+            ILogger log)
+        {
+            var instanceId = req.GetQueryString("instanceId");
+            log.LogInformation($"JoushiFlow_Request1 with ID = '{instanceId}'.");
+            await client.RaiseEventAsync(instanceId, "JoushiFlow_Approval1", true);
+        }
+
+        [FunctionName("JoushiFlow_Request2")]
+        public static async Task RequestApproval2(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")]HttpRequestMessage req,
+            [OrchestrationClient]DurableOrchestrationClient client,
+            ILogger log)
+        {
+            var instanceId = req.GetQueryString("instanceId");
+            log.LogInformation($"JoushiFlow_Request2 with ID = '{instanceId}'.");
+            await client.RaiseEventAsync(instanceId, "JoushiFlow_Approval2", true);
+        }
+
+        [FunctionName("JoushiFlow_Request3")]
+        public static async Task RequestApproval3(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")]HttpRequestMessage req,
+            [OrchestrationClient]DurableOrchestrationClient client,
+            ILogger log)
+        {
+            var instanceId = req.GetQueryString("instanceId");
+            log.LogInformation($"JoushiFlow_Request3 with ID = '{instanceId}'.");
+            await client.RaiseEventAsync(instanceId, "JoushiFlow_Approval3", true);
         }
 
         [FunctionName("JoushiFlow_HttpStart")]
@@ -44,6 +106,29 @@ namespace MyFunctionApp
             log.LogInformation($"Started orchestration with ID = '{instanceId}'.");
 
             return starter.CreateCheckStatusResponse(req, instanceId);
+        }
+    }
+
+    public class SlackPayload
+    {
+        [JsonProperty("text")]
+        public string Text { get; set; }
+    }
+
+    public static class HttpRequestMessageExtensions
+    {
+        public static string GetQueryString(this HttpRequestMessage req, string key)
+        {
+            if (req.Properties.ContainsKey("HttpContext"))
+            {
+                var httpContext = req.Properties["HttpContext"] as DefaultHttpContext;
+                var query = httpContext?.Request.Query ?? null;
+                if (query?.ContainsKey(key) ?? false)
+                {
+                    return query[key];
+                }
+            }
+            return string.Empty;
         }
     }
 }
