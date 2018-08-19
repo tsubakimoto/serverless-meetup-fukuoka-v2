@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json.schemastore.org/proxies",
+  "proxies": {
+    "joushi": {
+      "matchCondition": {
+        "route": "/joushi",
+        "methods": [
+          "GET"
+        ]
+      },
+      "backendUri": "https://serverless-meetup-fukuoka-v2.azurewebsites.net/api/JoushiFlow_HttpStart"
+    },
+    "joushi-req1": {
+      "matchCondition": {
+        "route": "joushi/req1/{instanceId}",
+        "methods": [
+          "GET"
+        ]
+      },
+      "backendUri": "https://serverless-meetup-fukuoka-v2.azurewebsites.net/api/JoushiFlow_Request1?instanceId={instanceId}"
+    },
+    "joushi-req2": {
+      "matchCondition": {
+        "route": "joushi/req2/{instanceId}",
+        "methods": [
+          "GET"
+        ]
+      },
+      "backendUri": "https://serverless-meetup-fukuoka-v2.azurewebsites.net/api/JoushiFlow_Request2?instanceId={instanceId}"
+    },
+    "joushi-req3": {
+      "matchCondition": {
+        "route": "joushi/req3/{instanceId}",
+        "methods": [
+          "GET"
+        ]
+      },
+      "backendUri": "https://serverless-meetup-fukuoka-v2.azurewebsites.net/api/JoushiFlow_Request3?instanceId={instanceId}"
+    }
+  }
+}
