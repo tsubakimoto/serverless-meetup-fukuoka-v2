@@ -16,7 +16,6 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.5.17/dist/vue.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script>
-        let instanceId = '';
         const vm = new Vue({
             el: '#form1',
             data: {
@@ -25,7 +24,8 @@
                 request1: '',
                 request2: '',
                 request3: '',
-                info: ''
+                info: '',
+                dfres: null
             },
             methods: {
                 call: function (event) {
@@ -35,9 +35,9 @@
                             crossdomain: true
                         })
                         .then(response => {
-                            instanceId = response.data.id;
+                            this.dfres = response.data;
                             this.info = JSON.stringify(response, null, '  ');
-                            this.request1 = this.url + '/req1/' + instanceId;
+                            this.request1 = this.url + '/req1/' + this.dfres.id;
                         });
                 },
                 approve1: function (event) {
@@ -46,7 +46,7 @@
                             crossdomain: true
                         })
                         .then(response => {
-                            this.request2 = this.url + '/req2/' + instanceId;
+                            this.request2 = this.url + '/req2/' + this.dfres.id;
                         });
                 },
                 approve2: function (event) {
@@ -55,7 +55,7 @@
                             crossdomain: true
                         })
                         .then(response => {
-                            this.request3 = this.url + '/req3/' + instanceId;
+                            this.request3 = this.url + '/req3/' + this.dfres.id;
                         });
                 },
                 approve3: function (event) {
@@ -64,6 +64,15 @@
                             crossdomain: true
                         })
                         .then(response => {
+                        });
+                },
+                getStatus: function (event) {
+                    axios
+                        .get(this.dfres.statusQueryGetUri, {
+                            crossdomain: true
+                        })
+                        .then(response => {
+                            this.info = JSON.stringify(response, null, '  ');
                         });
                 }
             },
@@ -89,19 +98,19 @@
         <dd class="col-2" v-if="host">
             <span class="btn btn-primary" v-on:click="call">Call</span>
         </dd>
-        <dt class="col-10" v-if="request1">
+        <dt class="col-10 mt-3" v-if="request1">
             <a v-bind:href="request1" target="_blank">{{ request1 }}</a>
         </dt>
         <dd class="col-2" v-if="request1">
             <span class="btn btn-primary" v-on:click="approve1">Approve1</span>
         </dd>
-        <dt class="col-10" v-if="request2">
+        <dt class="col-10 mt-3" v-if="request2">
             <a v-bind:href="request2" target="_blank">{{ request2 }}</a>
         </dt>
         <dd class="col-2" v-if="request2">
             <span class="btn btn-primary" v-on:click="approve2">Approve2</span>
         </dd>
-        <dt class="col-10" v-if="request3">
+        <dt class="col-10 mt-3" v-if="request3">
             <a v-bind:href="request3" target="_blank">{{ request3 }}</a>
         </dt>
         <dd class="col-2" v-if="request3">
