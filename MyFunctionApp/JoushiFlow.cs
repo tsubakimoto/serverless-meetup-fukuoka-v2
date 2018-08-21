@@ -18,10 +18,8 @@ namespace MyFunctionApp
         public static async Task<string> RunOrchestrator(
             [OrchestrationTrigger] DurableOrchestrationContext context)
         {
-            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Start JoushiFlow.");
-
             // Question1
-            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Question1 'Can you do action1?'");
+            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] 連絡フローが開始しました。");
             var approved1 = await context.WaitForExternalEvent<bool>("JoushiFlow_Approval1");
             if (!approved1)
             {
@@ -30,7 +28,7 @@ namespace MyFunctionApp
             }
 
             // Question2
-            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Question2 'Can you do action2?'");
+            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] 課長宛に連絡が来ました。'");
             var approved2 = await context.WaitForExternalEvent<bool>("JoushiFlow_Approval2");
             if (!approved2)
             {
@@ -39,7 +37,7 @@ namespace MyFunctionApp
             }
 
             // Question3
-            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Question3 'Can you do action3?'");
+            await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] 部長宛に連絡が来ました。");
             var approved3 = await context.WaitForExternalEvent<bool>("JoushiFlow_Approval3");
             if (!approved3)
             {
@@ -47,7 +45,7 @@ namespace MyFunctionApp
                 return await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Denied Question3.");
             }
 
-            return await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] Completed all actions.");
+            return await context.CallActivityAsync<string>("JoushiFlow_PostToSlack", $"[{context.InstanceId}] 社長宛に連絡が来ました。連絡フローが完了しました。");
         }
 
         [FunctionName("JoushiFlow_PostToSlack")]
